@@ -256,7 +256,7 @@ const UploadFile: React.FC = () => {
         },
       });
       setState({
-        ...prev,
+        ...state,
         file: null,
         preview: null,
         uploadProgress: 0,

@@ -75,37 +75,37 @@ const Accordion: React.FC<AccordionProps> = ({
       <div
         id={`${title.toLowerCase()}-content`}
         className={`transition-all duration-300 ease-in-out ${
-          isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+          isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0 hidden'
         }`}
       >
         {files.length === 0 ? (
-          <p className="px-4 py-3 text-gray-500 text-sm">No {title.toLowerCase()} uploaded yet.</p>
+          <p className="px-4 text-center py-3 text-gray-500 text-sm sm:text-sm">No {title.toLowerCase()} files uploaded yet.</p>
         ) : (
-          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100" tabIndex={0}>
-            <table className="min-w-[700px] w-full text-left text-sm text-gray-700">
-              <thead className="bg-gray-50 sticky top-0">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 text-sm">
+            <table className="min-w-[600px] w-full text-center sm:min-w-full">
+              <thead className="bg-gray-100 sticky top-0">
                 <tr>
-                  <th className="px-4 py-2 w-1/3">File</th>
-                  <th className="px-4 py-2 w-1/6">Type</th>
-                  <th className="px-4 py-2 w-1/12">Size</th>
-                  <th className="px-4 py-2 w-1/6">Uploaded</th>
-                  <th className="px-4 py-2 w-1/4">Actions</th>
+                  <th className="px-2 sm:px-4 py-2 w-1/3">File</th>
+                  <th className="px-2 sm:px-4 py-2 w-1/6">Type</th>
+                  <th className="px-2 sm:px-4 py-2 w-1/12">Size</th>
+                  <th className="px-2 sm:px-4 py-2 w-1/6">Date</th>
+                  <th className="px-2 sm:px-4 py-2 w-1/4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {files.map((file, index) => (
+                {files.map((file, idx) => (
                   <tr
                     key={file._id}
-                    className={`border-b hover:bg-gray-50 transition-colors duration-100 ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    }`}
+                    className={`border-b hover:bg-gray-100 transition-colors duration-200 ${
+                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                    `}
                   >
-                    <td className="px-4 py-2" title={file.originalName}>
+                    <td className="px-2 sm:px-4 py-2 truncate" title={file.originalName}>
                       {file.originalName}
                     </td>
-                    <td className="px-4 py-2">{file.mimeType}</td>
-                    <td className="px-4 py-2">{formatFileSize(file.size)}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 sm:px-4 py-2">{file.mimeType}</td>
+                    <td className="px-2 sm:px-4 py-2">{formatFileSize(file.size)}</td>
+                    <td className="px-2 sm:px-4 py-2">
                       {new Date(file.uploadDate).toLocaleDateString('en-US', {
                         weekday: 'short',
                         year: 'numeric',
@@ -113,13 +113,13 @@ const Accordion: React.FC<AccordionProps> = ({
                         day: 'numeric',
                       })}
                     </td>
-                    <td className="px-4 py-2 flex space-x-3">
+                    <td className="px-2 sm:px-4 py-2 flex justify-center space-x-2 sm:space-x-3">
                       {isOpenable(file.mimeType) && (
                         <a
-                          href={`${import.meta.env.VITE_API_URL}/api/uploads/${encodeURIComponent(file.filename)}`}
+                          href={`${import.meta.env.VITE_API_URL}/api/uploads/${file.filename}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 rounded"
+                          className="text-green-600 hover:text-green-700 text-xs sm:text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 rounded"
                           aria-label={`Open ${file.originalName}`}
                         >
                           Open
@@ -127,14 +127,14 @@ const Accordion: React.FC<AccordionProps> = ({
                       )}
                       <button
                         onClick={() => handleDownload(file.filename, file.originalName)}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                        className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                         aria-label={`Download ${file.originalName}`}
                       >
                         Download
                       </button>
                       <button
                         onClick={() => handleDelete(file._id, file.originalName)}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+                        className="text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
                         aria-label={`Delete ${file.originalName}`}
                       >
                         Delete
@@ -176,27 +176,26 @@ const UploadFile: React.FC = () => {
     'audio/mpeg', 'audio/wav', 'audio/ogg',
   ];
 
-  // Fetch files with retry mechanism
-  const fetchFiles = async (attempt = 1, maxAttempts = 3) => {
+  const fetchFiles = async (attempt = 1, maxRetries = 3) => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/files`, {
         timeout: 10000,
       });
       setState((prev) => ({ ...prev, files: response.data, error: '' }));
-      setRetryCount(0); // Reset retry count on success
+      setRetryCount(0);
     } catch (error: any) {
-      console.error('Fetch files error:', error.response || error);
-      const errorMessage = error.response?.data?.message || 'Failed to fetch files.';
-      if (attempt < maxAttempts) {
-        console.log(`Retrying fetch files (${attempt + 1}/${maxAttempts})...`);
+      console.error('Fetch files error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to fetch files';
+      if (attempt < maxRetries) {
+        console.log(`Retrying fetch files (${attempt + 1}/${maxRetries})...`);
         setTimeout(() => {
           setRetryCount(attempt);
-          fetchFiles(attempt + 1, maxAttempts);
+          fetchFiles(attempt + 1, maxRetries);
         }, 2000 * attempt);
       } else {
         setState((prev) => ({
           ...prev,
-          error: `${errorMessage} All ${maxAttempts} attempts failed.`,
+          error: `${errorMessage}. All ${maxRetries} retries failed. Please try refreshing the page.`,
         }));
         setRetryCount(0);
       }
@@ -212,8 +211,8 @@ const UploadFile: React.FC = () => {
     };
   }, []);
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] || null;
     if (state.preview) {
       URL.revokeObjectURL(state.preview);
     }
@@ -221,9 +220,7 @@ const UploadFile: React.FC = () => {
       setState({
         ...state,
         file: selectedFile,
-        preview: ['image/jpeg', 'image/png', 'image/gif'].includes(selectedFile.type)
-          ? URL.createObjectURL(selectedFile)
-          : null,
+        preview: ['image/jpeg', 'image/png', 'image/gif'].includes(selectedFile.type) ? URL.createObjectURL(selectedFile) : null,
         error: '',
       });
     } else {
@@ -231,13 +228,13 @@ const UploadFile: React.FC = () => {
         ...state,
         file: null,
         preview: null,
-        error: 'Invalid file type. Please upload an image, document, video, or audio file.',
+        error: 'Invalid file type. Please upload an image, PDF, document, video, or audio file.',
       });
     }
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     if (!state.file) {
       setState({ ...state, error: 'Please select a file.' });
       return;
@@ -250,7 +247,7 @@ const UploadFile: React.FC = () => {
       setState({ ...state, uploadProgress: 0, message: '', error: '' });
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 30000,
+        timeout: 50000,
         onUploadProgress: (progressEvent) => {
           const percent = progressEvent.total
             ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
@@ -259,17 +256,17 @@ const UploadFile: React.FC = () => {
         },
       });
       setState({
-        ...state,
+        ...prev,
         file: null,
         preview: null,
         uploadProgress: 0,
         message: response.data.message,
         error: '',
       });
-      fetchFiles(); // Refresh file list
+      fetchFiles();
     } catch (error: any) {
-      console.error('Upload error:', error.response || error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to upload file.';
+      console.error('Upload error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to upload file. Please try again.';
       setState({
         ...state,
         error: errorMessage,
@@ -280,24 +277,25 @@ const UploadFile: React.FC = () => {
 
   const handleDownload = async (filename: string, originalName: string) => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/download/${encodeURIComponent(filename)}`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/download/${filename}`, {
         responseType: 'blob',
-        timeout: 10000,
+        timeout: 15000,
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', originalName);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url);
       setState((prev) => ({ ...prev, error: '' }));
     } catch (error: any) {
-      console.error('Download error:', error.response || error);
+      console.error('Download error:', error);
+      const errorMessage = error.response?.data?.message || `Failed to download file: ${originalName}. It may no longer be available.`;
       setState((prev) => ({
         ...prev,
-        error: `Failed to download file: ${originalName} - ${error.response?.data?.message || error.message}`,
+        error: errorMessage,
       }));
     }
   };
@@ -317,10 +315,10 @@ const UploadFile: React.FC = () => {
         message: `File "${originalName}" deleted successfully.`,
         error: '',
       }));
-      fetchFiles(); // Refresh file list
+      fetchFiles();
     } catch (error: any) {
-      console.error('Delete error:', error.response || error);
-      const errorMessage = error.response?.data?.message || `Failed to delete file: ${originalName}`;
+      console.error('Delete error:', error);
+      const errorMessage = error.response?.data?.message || `Failed to delete file: ${originalName}. Please try again.`;
       setState((prev) => ({
         ...prev,
         error: errorMessage,
@@ -343,7 +341,6 @@ const UploadFile: React.FC = () => {
     ].includes(mimeType);
   };
 
-  // Categorize files
   const categorizedFiles = state.files.reduce(
     (acc, file) => {
       const category = mimeTypeCategories[file.mimeType] || 'document';
@@ -372,7 +369,7 @@ const UploadFile: React.FC = () => {
           <span className="text-sm font-medium">Back</span>
         </button>
         <h1 className="text-xl font-semibold text-gray-800">File Upload</h1>
-        <div className="w-20"></div> {/* Spacer for alignment */}
+        <div className="w-20"></div>
       </header>
       <main className="max-w-4xl w-full mx-auto mt-8 space-y-8">
         <section className="bg-white p-6 rounded-xl shadow-md">

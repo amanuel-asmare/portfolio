@@ -116,11 +116,12 @@ const Accordion: React.FC<AccordionProps> = ({
                     <td className="px-2 sm:px-4 py-2 flex justify-center space-x-2 sm:space-x-3">
                       {isOpenable(file.mimeType) && (
                         <a
-                          href={`${import.meta.env.VITE_API_URL}/api/uploads/${file.filename}`}
+                          href={`${import.meta.env.VITE_API_URL}/api/uploads/${encodeURIComponent(file.filename)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-green-600 hover:text-green-700 text-xs sm:text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 rounded"
                           aria-label={`Open ${file.originalName}`}
+                          onClick={() => console.log(`Opening file: ${file.filename}`)}
                         >
                           Open
                         </a>
@@ -277,11 +278,13 @@ const UploadFile: React.FC = () => {
 
   const handleDownload = async (filename: string, originalName: string) => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/download/${filename}`, {
+      console.log(`Initiating download for: ${filename}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/download/${encodeURIComponent(filename)}`, {
         responseType: 'blob',
         timeout: 15000,
       });
-      const url = URL.createObjectURL(new Blob([response.data]));
+      console.log(`Download response status: ${response.status}, Content-Type: ${response.headers['content-type']}`);
+      const url = URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] }));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', originalName);
@@ -291,8 +294,8 @@ const UploadFile: React.FC = () => {
       URL.revokeObjectURL(url);
       setState((prev) => ({ ...prev, error: '' }));
     } catch (error: any) {
-      console.error('Download error:', error);
-      const errorMessage = error.response?.data?.message || `Failed to download file: ${originalName}. It may no longer be available.`;
+      console.error(`Download error for ${filename}:`, error);
+      const errorMessage = error.response?.data?.message || `Failed to download file: ${originalName}. It may no longer be available. Status: ${error.response?.status || 'unknown'}.`;
       setState((prev) => ({
         ...prev,
         error: errorMessage,

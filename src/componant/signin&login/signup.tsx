@@ -37,7 +37,7 @@ const SignIn: React.FC<SignInProps> = ({ switchToLogin }) => {
     setApiError('');
     if (validateForm()) {
       try {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/api/signin`, { name, email, password });
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/signin`, { name, email, password }); // Fixed API route
         setName('');
         setEmail('');
         setPassword('');
@@ -45,6 +45,7 @@ const SignIn: React.FC<SignInProps> = ({ switchToLogin }) => {
         alert('Sign up successful! Please log in.');
         switchToLogin();
       } catch (error: any) {
+        console.error('Sign up error:', error.response || error); // Added error logging
         setApiError(error.response?.data?.message || 'Failed to sign up');
       }
     }

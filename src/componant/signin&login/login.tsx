@@ -32,7 +32,7 @@ const Login: React.FC<LoginProps> = ({ switchToSignIn }) => {
     setApiError('');
     if (validateForm()) {
       try {
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/api/login`, { name, password });
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/login`, { name, password }); // Fixed API route
         setName('');
         setPassword('');
         setErrors({});
@@ -40,6 +40,7 @@ const Login: React.FC<LoginProps> = ({ switchToSignIn }) => {
         console.log('User logged in:', response.data);
         navigate('/home');
       } catch (error: any) {
+        console.error('Login error:', error.response || error); // Added error logging
         setApiError(error.response?.data?.message || 'Failed to log in');
       }
     }

@@ -116,7 +116,7 @@ const Accordion: React.FC<AccordionProps> = ({
                     <td className="px-4 py-2 flex space-x-3">
                       {isOpenable(file.mimeType) && (
                         <a
-                          href={`${import.meta.env.VITE_API_URL}/api/api/uploads/${encodeURIComponent(file.filename)}`}
+                          href={`${import.meta.env.VITE_API_URL}/api/uploads/${encodeURIComponent(file.filename)}`} // Fixed API route
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 rounded"
@@ -178,9 +178,10 @@ const UploadFile: React.FC = () => {
   // Fetch files on mount and after upload
   const fetchFiles = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/api/files`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/files`); // Fixed API route
       setState((prev) => ({ ...prev, files: response.data, error: '' }));
     } catch (error: any) {
+      console.error('Fetch files error:', error.response || error); // Added error logging
       setState((prev) => ({
         ...prev,
         error: error.response?.data?.message || 'Failed to fetch files.',
@@ -233,7 +234,7 @@ const UploadFile: React.FC = () => {
 
     try {
       setState({ ...state, uploadProgress: 0, message: '', error: '' });
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/api/upload`, formData, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData, { // Fixed API route
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 30000,
         onUploadProgress: (progressEvent) => {
@@ -253,8 +254,8 @@ const UploadFile: React.FC = () => {
       });
       fetchFiles(); // Refresh file list
     } catch (error: any) {
+      console.error('Upload error:', error.response || error); // Improved error logging
       const errorMessage = error.response?.data?.message || error.message || 'Failed to upload file.';
-      console.error('Upload error:', error);
       setState({
         ...state,
         error: errorMessage,
@@ -265,7 +266,7 @@ const UploadFile: React.FC = () => {
 
   const handleDownload = async (filename: string, originalName: string) => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/api/download/${encodeURIComponent(filename)}`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/download/${encodeURIComponent(filename)}`, { // Fixed API route
         responseType: 'blob',
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -278,7 +279,7 @@ const UploadFile: React.FC = () => {
       window.URL.revokeObjectURL(url);
       setState((prev) => ({ ...prev, error: '' }));
     } catch (error: any) {
-      console.error('Download error:', error);
+      console.error('Download error:', error.response || error); // Improved error logging
       setState((prev) => ({
         ...prev,
         error: `Failed to download file: ${originalName} - ${error.response?.data?.message || error.message}`,
@@ -292,7 +293,7 @@ const UploadFile: React.FC = () => {
     }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/api/files/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/files/${id}`); // Fixed API route
       setState((prev) => ({
         ...prev,
         files: prev.files.filter((file) => file._id !== id),
@@ -300,7 +301,7 @@ const UploadFile: React.FC = () => {
         error: '',
       }));
     } catch (error: any) {
-      console.error('Delete error:', error);
+      console.error('Delete error:', error.response || error); // Improved error logging
       const errorMessage = error.response?.data?.message || `Failed to delete file: ${originalName}`;
       setState((prev) => ({
         ...prev,

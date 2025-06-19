@@ -116,7 +116,7 @@ const Accordion: React.FC<AccordionProps> = ({
                     <td className="px-4 py-2 flex space-x-3">
                       {isOpenable(file.mimeType) && (
                         <a
-                          href={`${import.meta.env.VITE_API_URL}/api/uploads/${encodeURIComponent(file.filename)}`} // Fixed API route
+                          href={`${import.meta.env.VITE_API_URL}/api/uploads/${encodeURIComponent(file.filename)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 rounded"
@@ -167,6 +167,7 @@ const UploadFile: React.FC = () => {
     audio: false,
     documents: false,
   });
+  const [retryCount, setRetryCount] = useState(0);
 
   const allowedFileTypes = [
     'image/jpeg', 'image/png', 'image/gif',
@@ -175,17 +176,30 @@ const UploadFile: React.FC = () => {
     'audio/mpeg', 'audio/wav', 'audio/ogg',
   ];
 
-  // Fetch files on mount and after upload
-  const fetchFiles = async () => {
+  // Fetch files with retry mechanism
+  const fetchFiles = async (attempt = 1, maxAttempts = 3) => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/files`); // Fixed API route
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/files`, {
+        timeout: 10000,
+      });
       setState((prev) => ({ ...prev, files: response.data, error: '' }));
+      setRetryCount(0); // Reset retry count on success
     } catch (error: any) {
-      console.error('Fetch files error:', error.response || error); // Added error logging
-      setState((prev) => ({
-        ...prev,
-        error: error.response?.data?.message || 'Failed to fetch files.',
-      }));
+      console.error('Fetch files error:', error.response || error);
+      const errorMessage = error.response?.data?.message || 'Failed to fetch files.';
+      if (attempt < maxAttempts) {
+        console.log(`Retrying fetch files (${attempt + 1}/${maxAttempts})...`);
+        setTimeout(() => {
+          setRetryCount(attempt);
+          fetchFiles(attempt + 1, maxAttempts);
+        }, 2000 * attempt);
+      } else {
+        setState((prev) => ({
+          ...prev,
+          error: `${errorMessage} All ${maxAttempts} attempts failed.`,
+        }));
+        setRetryCount(0);
+      }
     }
   };
 
@@ -234,7 +248,7 @@ const UploadFile: React.FC = () => {
 
     try {
       setState({ ...state, uploadProgress: 0, message: '', error: '' });
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData, { // Fixed API route
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 30000,
         onUploadProgress: (progressEvent) => {
@@ -254,7 +268,7 @@ const UploadFile: React.FC = () => {
       });
       fetchFiles(); // Refresh file list
     } catch (error: any) {
-      console.error('Upload error:', error.response || error); // Improved error logging
+      console.error('Upload error:', error.response || error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to upload file.';
       setState({
         ...state,
@@ -266,8 +280,9 @@ const UploadFile: React.FC = () => {
 
   const handleDownload = async (filename: string, originalName: string) => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/download/${encodeURIComponent(filename)}`, { // Fixed API route
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/download/${encodeURIComponent(filename)}`, {
         responseType: 'blob',
+        timeout: 10000,
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -279,7 +294,7 @@ const UploadFile: React.FC = () => {
       window.URL.revokeObjectURL(url);
       setState((prev) => ({ ...prev, error: '' }));
     } catch (error: any) {
-      console.error('Download error:', error.response || error); // Improved error logging
+      console.error('Download error:', error.response || error);
       setState((prev) => ({
         ...prev,
         error: `Failed to download file: ${originalName} - ${error.response?.data?.message || error.message}`,
@@ -293,15 +308,18 @@ const UploadFile: React.FC = () => {
     }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/files/${id}`); // Fixed API route
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/files/${id}`, {
+        timeout: 10000,
+      });
       setState((prev) => ({
         ...prev,
         files: prev.files.filter((file) => file._id !== id),
         message: `File "${originalName}" deleted successfully.`,
         error: '',
       }));
+      fetchFiles(); // Refresh file list
     } catch (error: any) {
-      console.error('Delete error:', error.response || error); // Improved error logging
+      console.error('Delete error:', error.response || error);
       const errorMessage = error.response?.data?.message || `Failed to delete file: ${originalName}`;
       setState((prev) => ({
         ...prev,
@@ -365,9 +383,12 @@ const UploadFile: React.FC = () => {
             </p>
           )}
           {state.error && (
-            <p className="text-red-600 bg-red-50 p-3 rounded-md text-center mb-4 text-sm">
-              {state.error}
-            </p>
+            <div className="text-red-600 bg-red-50 p-3 rounded-md text-center mb-4 text-sm">
+              <p>{state.error}</p>
+              {retryCount > 0 && (
+                <p>Retrying... Attempt {retryCount + 1}/3</p>
+              )}
+            </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex flex-col items-center space-y-4">

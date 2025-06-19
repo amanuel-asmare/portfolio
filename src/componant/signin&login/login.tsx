@@ -32,7 +32,7 @@ const Login: React.FC<LoginProps> = ({ switchToSignIn }) => {
     setApiError('');
     if (validateForm()) {
       try {
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/login`, { name, password });
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/api/login`, { name, password });
         setName('');
         setPassword('');
         setErrors({});
